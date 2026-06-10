@@ -2,6 +2,8 @@
 
 使用 DeepSeek AI 将 PSD 设计稿自动转为 Unity C# 和 Cocos2dx JavaScript 代码。
 
+> 开发者文档参见 [DEVELOPER.md](DEVELOPER.md)
+
 ## 快速开始
 
 ```bash
