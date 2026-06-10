@@ -63,6 +63,10 @@ UIGenPipeline/
 |------|------|
 | `DEEPSEEK_API_KEY` | DeepSeek API 密钥（必需） |
 
+## 许可证
+
+[MIT](LICENSE)
+
 ## 功能
 
 - **真实 PSD 解析** — 使用 `psd-tools` 读取图层、文字、字体属性
