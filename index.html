@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="pageTitle">AI UI Pipeline — PSD 转 Unity / Cocos2dx</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0F172A;
+            --surface: #1E293B;
+            --surface-hover: #334155;
+            --border: #334155;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+            --accent: #22C55E;
+            --accent-hover: #16A34A;
+            --accent-glow: rgba(34, 197, 94, 0.15);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+
+        .header {
+            border-bottom: 1px solid var(--border);
+            padding: 24px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: var(--accent);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .logo-icon svg { width: 20px; height: 20px; color: #0F172A; }
+
+        .header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+
+        .header .subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            display: none;
+        }
+
+        @media (min-width: 640px) { .header .subtitle { display: block; } }
+
+        .lang-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .lang-btn:hover {
+            color: var(--text);
+            border-color: var(--accent);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--accent);
+            color: #0F172A;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 100;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 32px 20px 64px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 4px;
+            margin-bottom: 28px;
+            border: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .tab-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+        .tab-btn:hover:not(:disabled) { color: var(--text); background: rgba(255,255,255,0.04); }
+
+        .tab-btn.active { background: var(--accent); color: #0F172A; font-weight: 600; }
+
+        .tab-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .panel { display: block; }
+        .panel.hidden { display: none; }
+
+        .panel h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            letter-spacing: -0.01em;
+        }
+
+        .panel h2 small {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: border-color 0.2s ease;
+        }
+
+        .card:hover { border-color: #475569; }
+
+        .guide-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .guide-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 20px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .guide-header svg:first-child { flex-shrink: 0; }
+
+        .guide-chevron {
+            margin-left: auto;
+            transition: transform 0.2s ease;
+        }
+
+        .guide-card.collapsed .guide-chevron { transform: rotate(-90deg); }
+        .guide-card.collapsed .guide-body { display: none; }
+
+        .guide-body { padding: 16px 20px 20px; }
+
+        .guide-step {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .guide-step:last-of-type { margin-bottom: 16px; }
+
+        .guide-step-num {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #0F172A;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1px;
+        }
+
+        .guide-step strong {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+
+        .guide-step p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .guide-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 10px 12px;
+            background: rgba(34, 197, 94, 0.08);
+            border-radius: var(--radius-sm);
+        }
+
+        .guide-note svg { flex-shrink: 0; margin-top: 1px; }
+
+        .engine-toggles {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .engine-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .engine-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .engine-toggle input { display: none; }
+
+        .toggle-track {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .engine-toggle input:checked + .toggle-track {
+            background: rgba(34, 197, 94, 0.12);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .engine-toggle input:checked + .toggle-track svg { stroke: var(--accent); }
+
+        .advanced-section {
+            margin-top: 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .advanced-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: color 0.2s ease;
+        }
+
+        .advanced-header:hover { color: var(--text); }
+
+        .advanced-chevron {
+            margin-left: auto;
+            transition: transform 0.2s ease;
+        }
+
+        .advanced-section.collapsed .advanced-chevron { transform: rotate(-90deg); }
+        .advanced-section.collapsed .advanced-body { display: none; }
+
+        .advanced-body {
+            padding: 0 14px 14px;
+        }
+
+        .advanced-body label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        #customInstructions {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 13px;
+            padding: 10px 12px;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1.5;
+            resize: vertical;
+            transition: border-color 0.2s ease;
+        }
+
+        #customInstructions:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        #customInstructions::placeholder { color: #475569; }
+
+        .form-group { margin-bottom: 20px; }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .upload-area:hover { border-color: var(--accent); background: var(--accent-glow); }
+
+        .upload-icon { margin: 0 auto 16px; width: 48px; height: 48px; color: var(--text-muted); }
+
+        .upload-area h3 { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+
+        .upload-area p { font-size: 13px; color: var(--text-muted); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn svg { width: 16px; height: 16px; }
+
+        .btn-primary { background: var(--accent); color: #0F172A; width: 100%; }
+
+        .btn-primary:hover:not(:disabled) { background: var(--accent-hover); box-shadow: 0 0 20px var(--accent-glow); }
+
+        .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); width: 100%; }
+
+        .btn-secondary:hover:not(:disabled) { background: var(--surface-hover); }
+
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .demo-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+        .demo-section h3 { font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 12px; }
+
+        .demo-section .btn-secondary { margin-top: 0; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+        thead th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody td { padding: 10px 12px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); }
+        tbody tr { transition: background 0.15s ease; }
+        tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+        .comp-name { font-weight: 600; color: var(--accent); }
+
+        .semantic-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+            background: var(--accent-glow);
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .confidence-bar { display: flex; align-items: center; gap: 8px; }
+
+        .confidence-track {
+            flex: 1; height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            max-width: 80px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 0.4s ease;
+        }
+
+        .confidence-label { font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); min-width: 32px; }
+
+        .code-section { margin-bottom: 24px; }
+
+        .code-section h3 {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-block {
+            background: #0B1120;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.65;
+            max-height: 400px;
+            overflow-y: auto;
+            color: #E2E8F0;
+        }
+
+        .code-block code { white-space: pre; }
+
+        .toolbar { display: flex; gap: 8px; margin-top: 8px; }
+
+        .toolbar .btn { font-size: 12px; padding: 6px 14px; width: auto; }
+
+        .btn-sm { font-size: 12px; padding: 6px 14px; background: var(--surface); color: var(--text); border: 1px solid var(--border); width: auto; }
+
+        .btn-sm:hover:not(:disabled) { background: var(--surface-hover); }
+
+        .btn-success { background: var(--accent); color: #0F172A; }
+
+        .btn-success:hover:not(:disabled) { background: var(--accent-hover); box-shadow: 0 0 20px var(--accent-glow); }
+
+        .export-section { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center; }
+
+        .export-section .btn { max-width: 360px; }
+
+        .export-section .hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+
+        .file-info {
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            margin-top: 16px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .file-info p { color: var(--accent); font-weight: 500; }
+        .file-info .btn { width: auto; font-size: 13px; padding: 8px 16px; }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title svg { width: 18px; height: 18px; color: var(--accent); }
+
+        .footer {
+            text-align: center;
+            padding: 24px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 640px) {
+            .header { padding: 16px 16px; }
+            .header h1 { font-size: 15px; }
+            .container { padding: 20px 12px 48px; }
+            .card { padding: 16px; }
+            .upload-area { padding: 32px 16px; }
+            .tab-btn { font-size: 12px; padding: 8px; }
+            .tab-btn span.tab-label { display: none; }
+            table { font-size: 12px; }
+            thead th, tbody td { padding: 8px; }
+            .code-block { font-size: 12px; max-height: 300px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 3 21 3 21 8"/>
+                    <line x1="4" y1="20" x2="21" y2="3"/>
+                    <polyline points="21 16 21 21 16 21"/>
+                    <line x1="15" y1="15" x2="21" y2="21"/>
+                    <line x1="3" y1="3" x2="9" y2="9"/>
+                </svg>
+            </div>
+            <div>
+                <h1 data-i18n="appName">AI UI Pipeline</h1>
+                <p class="subtitle" data-i18n="appDesc">PSD → Unity / Cocos2dx</p>
+            </div>
+        </div>
+        <button class="lang-btn" onclick="toggleLang()" id="langBtn">EN</button>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('upload')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="tab-label" data-i18n="tabUpload">上传</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('components')" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                <span class="tab-label" data-i18n="tabComponents">组件识别</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('code')" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <span class="tab-label" data-i18n="tabCode">代码生成</span>
+            </button>
+        </div>
+
+        <div id="upload" class="panel">
+            <h2 data-i18n="step1Title">上传 <small>步骤 1/3</small></h2>
+
+            <div class="card">
+                <div class="form-group">
+                    <label for="projectName" data-i18n="projectNameLabel">项目名称</label>
+                    <input type="text" id="projectName" value="LoginPanel" data-i18n-placeholder="projectNamePlaceholder">
+                </div>
+
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()"
+                     ondragover="event.preventDefault()"
+                     ondrop="event.preventDefault(); handleFileUpload({target:{files:event.dataTransfer.files}})">
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="12" y1="18" x2="12" y2="12"/>
+                            <line x1="9" y1="15" x2="12" y2="12"/>
+                            <line x1="15" y1="15" x2="12" y2="12"/>
+                        </svg>
+                    </div>
+                    <h3 data-i18n="dropHint">拖拽 PSD 文件到此处，或点击选择</h3>
+                    <p data-i18n="dropSub">支持 .psd 格式</p>
+                </div>
+                <input type="file" id="fileInput" accept=".psd" style="display:none" onchange="handleFileUpload(event)">
+
+                <div id="fileInfo" class="file-info" style="display:none;">
+                    <p id="fileName"></p>
+                    <button class="btn btn-primary" id="analyzeBtn" onclick="triggerAnalyze()" data-i18n="analyzeBtn">分析</button>
+                </div>
+            </div>
+
+            <div class="demo-section">
+                <h3 data-i18n="noPsdHint">没有 PSD？试试演示数据</h3>
+                <button class="btn btn-secondary" onclick="loadDemoData()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    <span data-i18n="loadDemoBtn">加载演示数据</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="components" class="panel hidden">
+            <h2 data-i18n="step2Title">组件识别 <small>步骤 2/3</small></h2>
+            <div class="card">
+                <div class="section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    <span data-i18n="aiClassification">AI 分类结果</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="thName">名称</th>
+                            <th data-i18n="thLayer">图层类型</th>
+                            <th data-i18n="thType">语义类型</th>
+                            <th data-i18n="thConfidence">置信度</th>
+                        </tr>
+                    </thead>
+                    <tbody id="componentsTable"></tbody>
+                </table>
+                <div class="engine-toggles">
+                    <span class="engine-label" data-i18n="targetEngines">目标引擎：</span>
+                    <label class="engine-toggle">
+                        <input type="checkbox" id="engineUnity" checked onchange="updateExportHint()">
+                        <span class="toggle-track">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                            <span data-i18n="engineUnity">Unity</span>
+                        </span>
+                    </label>
+                    <label class="engine-toggle">
+                        <input type="checkbox" id="engineCocos" checked onchange="updateExportHint()">
+                        <span class="toggle-track">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg>
+                            <span data-i18n="engineCocos">Cocos2dx</span>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="advanced-section">
+                    <div class="advanced-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span data-i18n="advancedTitle">高级设置</span>
+                        <svg class="advanced-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="advanced-body">
+                        <label for="customInstructions" data-i18n="customInstructionsLabel">自定义提示词（将追加到 AI 提示末尾）</label>
+                        <textarea id="customInstructions" rows="3" data-i18n-placeholder="customInstructionsPlaceholder" placeholder="例如：使用 DOTween 实现按钮动画&#10;所有字体颜色使用 #FFFFFF&#10;不需要生成 Image 组件"></textarea>
+                    </div>
+                </div>
+
+                <div style="margin-top:16px;">
+                    <button class="btn btn-primary" onclick="generateCode()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                        <span data-i18n="generateBtn">生成引擎代码</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="code" class="panel hidden">
+            <h2 data-i18n="step3Title">代码生成 <small>步骤 3/3</small></h2>
+
+            <div class="guide-card collapsed">
+                <div class="guide-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <span data-i18n="guideTitle">生成说明</span>
+                    <svg class="guide-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="guide-body">
+                    <div class="guide-step">
+                        <span class="guide-step-num">1</span>
+                        <div><strong data-i18n="guideStep1Title">上传 PSD</strong><p data-i18n="guideStep1Desc">在"上传"标签页拖入 .psd 文件，填写项目名称，点击分析</p></div>
+                    </div>
+                    <div class="guide-step">
+                        <span class="guide-step-num">2</span>
+                        <div><strong data-i18n="guideStep2Title">AI 组件识别</strong><p data-i18n="guideStep2Desc">DeepSeek AI 自动分析 PSD 图层结构，识别按钮、文本框、输入框等 UI 组件</p></div>
+                    </div>
+                    <div class="guide-step">
+                        <span class="guide-step-num">3</span>
+                        <div><strong data-i18n="guideStep3Title">生成引擎代码</strong><p data-i18n="guideStep3Desc">AI 根据组件位置(x,y)、大小(width,height)、文字内容生成 Unity C# 和 Cocos2dx JavaScript 代码，并自动转换坐标系（PSD 左上原点 → 引擎坐标）</p></div>
+                    </div>
+                    <div class="guide-step">
+                        <span class="guide-step-num">4</span>
+                        <div><strong data-i18n="guideStep4Title">导出项目</strong><p data-i18n="guideStep4Desc">点击"导出项目"下载包含两套源码的 ZIP 包，可直接导入 Unity / Cocos2dx 项目使用</p></div>
+                    </div>
+                    <div class="guide-note">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span data-i18n="guideNote" data-i18n-html="true"><strong>项目名</strong> 决定生成代码的类名（如 LoginPanel → 生成 LoginPanelPanel 类），建议使用大驼峰命名</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    Unity C# (UGUI)
+                </h3>
+                <div class="code-block"><code id="unityCode" data-i18n="waitingCode">等待生成…</code></div>
+                <div class="toolbar">
+                    <button class="btn btn-sm" onclick="copyCode('unityCode')" data-i18n="copyBtn">复制</button>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>
+                    Cocos2dx JavaScript
+                </h3>
+                <div class="code-block"><code id="cocosCode" data-i18n="waitingCode">等待生成…</code></div>
+                <div class="toolbar">
+                    <button class="btn btn-sm" onclick="copyCode('cocosCode')" data-i18n="copyBtn">复制</button>
+                </div>
+            </div>
+
+            <div class="export-section">
+                <button class="btn btn-success" onclick="exportProject()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span data-i18n="exportBtn">导出项目</span>
+                </button>
+                <p class="hint" id="exportHint">下载包含 Unity 和 Cocos2dx 源码的 ZIP 包</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <footer class="footer" data-i18n="footer">
+        AI UI Pipeline — PSD → Unity / Cocos2dx
+    </footer>
+
+    <script>
+        const i18n = {
+            zh: {
+                pageTitle: 'AI UI Pipeline — PSD 转 Unity / Cocos2dx',
+                appName: 'AI UI Pipeline',
+                appDesc: 'PSD → Unity / Cocos2dx',
+                tabUpload: '上传',
+                tabComponents: '组件识别',
+                tabCode: '代码生成',
+                step1Title: '上传',
+                step2Title: '组件识别',
+                step3Title: '代码生成',
+                projectNameLabel: '项目名称',
+                projectNamePlaceholder: '例如 LoginPanel',
+                dropHint: '拖拽 PSD 文件到此处，或点击选择',
+                dropSub: '支持 .psd 格式',
+                analyzeBtn: '分析',
+                analyzing: '分析中…',
+                noPsdHint: '没有 PSD？试试演示数据',
+                loadDemoBtn: '加载演示数据',
+                aiClassification: 'AI 分类结果',
+                thName: '名称',
+                thLayer: '图层类型',
+                thType: '语义类型',
+                thConfidence: '置信度',
+                generateBtn: '生成引擎代码',
+                generating: '正在生成…',
+                waitingCode: '等待生成…',
+                copyBtn: '复制',
+                exportBtn: '导出项目',
+                exportHint: '下载包含 Unity 和 Cocos2dx 源码的 ZIP 包',
+                footer: 'AI UI Pipeline — PSD → Unity / Cocos2dx',
+                alertUploadFirst: '请先上传 PSD 文件或加载演示数据',
+                alertExportFailed: '导出失败：',
+                alertAnalyzeFailed: '分析失败，已切换到演示数据：',
+                errorLabel: '错误',
+                noOutput: '// 无输出',
+                generatingExport: '正在生成代码，请稍后再导出',
+                guideTitle: '生成说明',
+                guideStep1Title: '上传 PSD',
+                guideStep1Desc: '在"上传"标签页拖入 .psd 文件，填写项目名称，点击分析',
+                guideStep2Title: 'AI 组件识别',
+                guideStep2Desc: 'DeepSeek AI 自动分析 PSD 图层结构，识别按钮、文本框、输入框等 UI 组件',
+                guideStep3Title: '生成引擎代码',
+                guideStep3Desc: 'AI 根据组件位置(x,y)、大小(width,height)、文字内容生成 Unity C# 和 Cocos2dx JavaScript 代码，并自动转换坐标系（PSD 左上原点 → 引擎坐标）',
+                guideStep4Title: '导出项目',
+                guideStep4Desc: '点击"导出项目"下载包含两套源码的 ZIP 包，可直接导入 Unity / Cocos2dx 项目使用',
+                guideNote: '<strong>项目名</strong> 决定生成代码的类名（如 LoginPanel → 生成 LoginPanel 类），建议使用大驼峰命名',
+                targetEngines: '目标引擎：',
+                engineUnity: 'Unity',
+                engineCocos: 'Cocos2dx',
+                advancedTitle: '高级设置',
+                customInstructionsLabel: '自定义提示词（将追加到 AI 提示末尾）',
+                customInstructionsPlaceholder: '例如：使用 DOTween 实现按钮动画\n所有字体颜色使用 #FFFFFF\n不需要生成 Image 组件',
+            },
+            en: {
+                pageTitle: 'AI UI Pipeline — PSD to Unity / Cocos2dx',
+                appName: 'AI UI Pipeline',
+                appDesc: 'PSD → Unity / Cocos2dx',
+                tabUpload: 'Upload',
+                tabComponents: 'Components',
+                tabCode: 'Code',
+                step1Title: 'Upload',
+                step2Title: 'Components',
+                step3Title: 'Code',
+                projectNameLabel: 'Project name',
+                projectNamePlaceholder: 'e.g. LoginPanel',
+                dropHint: 'Drop your PSD here, or click to browse',
+                dropSub: 'Supports .psd files',
+                analyzeBtn: 'Analyze',
+                analyzing: 'Analyzing…',
+                noPsdHint: 'No PSD? Try the demo',
+                loadDemoBtn: 'Load Demo Data',
+                aiClassification: 'AI Classification',
+                thName: 'Name',
+                thLayer: 'Layer',
+                thType: 'Type',
+                thConfidence: 'Confidence',
+                generateBtn: 'Generate Engine Code',
+                generating: 'Generating…',
+                waitingCode: 'Waiting for generation…',
+                copyBtn: 'Copy',
+                exportBtn: 'Export Project',
+                exportHint: 'Downloads a ZIP with Unity and Cocos2dx source files',
+                footer: 'AI UI Pipeline — PSD → Unity / Cocos2dx',
+                alertUploadFirst: 'Upload a PSD or load demo data first',
+                alertExportFailed: 'Export failed: ',
+                alertAnalyzeFailed: 'Analysis failed, falling back to demo data: ',
+                errorLabel: 'Error',
+                noOutput: '// No output',
+                generatingExport: 'Code is being generated, please wait',
+                guideTitle: 'How It Works',
+                guideStep1Title: 'Upload PSD',
+                guideStep1Desc: 'Drop a .psd file in the Upload tab, enter a project name, and click Analyze',
+                guideStep2Title: 'AI Component Recognition',
+                guideStep2Desc: 'DeepSeek AI analyzes the PSD layer structure and identifies buttons, text labels, input fields, and other UI components',
+                guideStep3Title: 'Generate Engine Code',
+                guideStep3Desc: 'AI generates Unity C# and Cocos2dx JavaScript code from component positions (x,y), sizes (width,height), and text content, with automatic coordinate conversion (PSD top-left origin → engine coordinates)',
+                guideStep4Title: 'Export Project',
+                guideStep4Desc: 'Click "Export Project" to download a ZIP containing both source files, ready to import into Unity / Cocos2dx projects',
+                guideNote: '<strong>Project name</strong> determines generated class names (e.g. LoginPanel → generates LoginPanel). Use PascalCase for best results.',
+                targetEngines: 'Target engines:',
+                engineUnity: 'Unity',
+                engineCocos: 'Cocos2dx',
+                advancedTitle: 'Advanced',
+                customInstructionsLabel: 'Custom instructions (appended to AI prompt)',
+                customInstructionsPlaceholder: 'e.g. Use DOTween for button animations\nAll font colors must be #FFFFFF\nSkip Image components',
+            }
+        };
+
+        let currentLang = 'zh';
+        let currentComponents = [];
+        let currentLayerStructure = null;
+        let selectedFile = null;
+
+        function t(key) {
+            return i18n[currentLang][key] || key;
+        }
+
+        function toggleLang() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            document.getElementById('langBtn').textContent = currentLang === 'zh' ? 'EN' : '中';
+            document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : 'en';
+            applyLang();
+            updateExportHint();
+        }
+
+        function applyLang() {
+            document.title = t('pageTitle');
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (el.dataset.i18nHtml) {
+                    el.innerHTML = t(key);
+                } else {
+                    el.textContent = t(key);
+                }
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                el.placeholder = t(el.dataset.i18nPlaceholder);
+            });
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+            document.getElementById(tabName).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabName)) {
+                    b.classList.add('active');
+                }
+            });
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            selectedFile = file;
+            const nameEl = document.getElementById('fileName');
+            if (currentLang === 'zh') {
+                nameEl.textContent = '已选择：' + file.name;
+            } else {
+                nameEl.textContent = 'Selected: ' + file.name;
+            }
+            document.getElementById('fileInfo').style.display = 'flex';
+            document.getElementById('fileInput').value = '';
+        }
+
+        async function triggerAnalyze() {
+            if (!selectedFile) return;
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = true;
+            btn.textContent = t('analyzing');
+
+            try {
+                const fd = new FormData();
+                fd.append('file', selectedFile);
+                const res = await fetch('/api/analyze-psd', { method: 'POST', body: fd });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                currentLayerStructure = data.layerStructure;
+                currentComponents = data.components || [];
+                renderComponentsTable();
+                switchTab('components');
+                document.querySelectorAll('.tab-btn')[1].disabled = false;
+                document.querySelectorAll('.tab-btn')[2].disabled = false;
+            } catch (e) {
+                alert(t('alertAnalyzeFailed') + e.message);
+                loadDemoData();
+            } finally {
+                btn.disabled = false;
+                btn.textContent = t('analyzeBtn');
+            }
+        }
+
+        function loadDemoData() {
+            currentLayerStructure = {
+                "name": "LoginUI",
+                "type": "group",
+                "children": [
+                    {"name": "Background", "type": "image", "x": 0, "y": 0, "width": 720, "height": 1280},
+                    {"name": "TitleText", "type": "text", "x": 360, "y": 200, "width": 200, "height": 50},
+                    {"name": "UsernameInput", "type": "image", "x": 100, "y": 400, "width": 520, "height": 60},
+                    {"name": "PasswordInput", "type": "image", "x": 100, "y": 520, "width": 520, "height": 60},
+                    {"name": "LoginButton", "type": "image", "x": 150, "y": 700, "width": 420, "height": 60}
+                ]
+            };
+            currentComponents = [
+                {name:'Background', layerType:'image', semanticType:'image', confidence:1.0},
+                {name:'TitleText', layerType:'text', semanticType:'text', confidence:0.95},
+                {name:'UsernameInput', layerType:'image', semanticType:'input', confidence:0.88},
+                {name:'PasswordInput', layerType:'image', semanticType:'input', confidence:0.88},
+                {name:'LoginButton', layerType:'image', semanticType:'button', confidence:0.92}
+            ];
+            renderComponentsTable();
+            switchTab('components');
+            document.querySelectorAll('.tab-btn')[1].disabled = false;
+            document.querySelectorAll('.tab-btn')[2].disabled = false;
+        }
+
+        function renderComponentsTable() {
+            const tbody = document.getElementById('componentsTable');
+            tbody.innerHTML = currentComponents.map(c => `
+                <tr>
+                    <td class="comp-name">${c.name}</td>
+                    <td><span class="semantic-badge">${c.layerType}</span></td>
+                    <td><span class="semantic-badge">${c.semanticType}</span></td>
+                    <td>
+                        <div class="confidence-bar">
+                            <div class="confidence-track">
+                                <div class="confidence-fill" style="width:${(c.confidence * 100).toFixed(0)}%"></div>
+                            </div>
+                            <span class="confidence-label">${(c.confidence * 100).toFixed(0)}%</span>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        let isGenerating = false;
+
+        function getTargetEngines() {
+            const engines = [];
+            if (document.getElementById('engineUnity').checked) engines.push('unity');
+            if (document.getElementById('engineCocos').checked) engines.push('cocos');
+            return engines;
+        }
+
+        function updateExportHint() {
+            const engines = getTargetEngines();
+            const hint = document.getElementById('exportHint');
+            const zh = currentLang === 'zh';
+            if (engines.length === 2) {
+                hint.textContent = zh ? '下载包含 Unity 和 Cocos2dx 源码的 ZIP 包' : 'Downloads a ZIP with Unity and Cocos2dx source files';
+            } else if (engines.length === 1) {
+                const name = engines[0] === 'unity' ? 'Unity' : 'Cocos2dx';
+                hint.textContent = zh ? `下载包含 ${name} 源码的 ZIP 包` : `Downloads a ZIP with ${name} source files`;
+            } else {
+                hint.textContent = zh ? '请至少选择一个目标引擎' : 'Select at least one engine';
+            }
+        }
+
+        async function generateCode() {
+            if (!currentLayerStructure) {
+                alert(t('alertUploadFirst'));
+                return;
+            }
+            const engines = getTargetEngines();
+            if (engines.length === 0) {
+                showToast(currentLang === 'zh' ? '请至少选择一个目标引擎' : 'Select at least one engine');
+                return;
+            }
+            const projectName = document.getElementById('projectName').value || 'UIPanel';
+
+            const sections = document.querySelectorAll('.code-section');
+            const unitySection = sections[0];
+            const cocosSection = sections[1];
+            unitySection.style.display = engines.includes('unity') ? '' : 'none';
+            cocosSection.style.display = engines.includes('cocos') ? '' : 'none';
+
+            if (engines.includes('unity')) document.getElementById('unityCode').textContent = t('generating');
+            if (engines.includes('cocos')) document.getElementById('cocosCode').textContent = t('generating');
+            switchTab('code');
+            isGenerating = true;
+            try {
+                const res = await fetch('/api/generate-code', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ layer_structure: currentLayerStructure, project_name: projectName, target_engines: engines, custom_instructions: document.getElementById('customInstructions').value })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                if (engines.includes('unity')) document.getElementById('unityCode').textContent = data.unityCode || t('noOutput');
+                if (engines.includes('cocos')) document.getElementById('cocosCode').textContent = data.cocosCode || t('noOutput');
+            } catch (e) {
+                if (engines.includes('unity')) document.getElementById('unityCode').textContent = '// ' + t('errorLabel') + ': ' + e.message;
+                if (engines.includes('cocos')) document.getElementById('cocosCode').textContent = '// ' + t('errorLabel') + ': ' + e.message;
+            } finally {
+                isGenerating = false;
+            }
+        }
+
+        let toastTimer = null;
+
+        function showToast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+        }
+
+        function copyCode(elementId) {
+            const el = document.getElementById(elementId);
+            navigator.clipboard.writeText(el.textContent).then(() => {
+                showToast(currentLang === 'zh' ? '已复制到剪贴板' : 'Copied to clipboard');
+            }).catch(() => {});
+        }
+
+        async function exportProject() {
+            if (isGenerating) {
+                showToast(t('generatingExport'));
+                return;
+            }
+            const projectName = document.getElementById('projectName').value || 'UIPanel';
+            const unityCode = document.getElementById('unityCode').textContent;
+            const cocosCode = document.getElementById('cocosCode').textContent;
+            try {
+                const res = await fetch('/api/export-project', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        project_name: projectName,
+                        unity_code: unityCode,
+                        cocos_code: cocosCode,
+                        components: currentComponents
+                    })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${projectName}_UIGen.zip`;
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(url);
+                a.remove();
+            } catch (e) {
+                alert(t('alertExportFailed') + e.message);
+            }
+        }
+        updateExportHint();
+    </script>
+</body>
+</html>

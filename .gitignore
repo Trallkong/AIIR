@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -216,3 +217,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+=======
+__pycache__/
+*.pyc
+.env
+output.txt
+>>>>>>> 3c27fa0 (Initial commit: AI UI Pipeline - PSD to Unity/Cocos2dx code generation)
